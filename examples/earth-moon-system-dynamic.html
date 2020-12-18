@@ -1,123 +1,251 @@
 <html>
-  <head>
+
+<head>
     <title>Spheres</title>
     <style>
-      body { margin: 0; background-color: black;}
-      canvas { width: 100%; height: 100% }
+        body {
+            margin: 20px;
+            background-color: #fff;
+        }
+
+        canvas {
+            width: 100%;
+            height: 100%
+        }
+
+        #simulation {
+            height: 480px;
+            width: 640px;
+        }
     </style>
-  </head>
-  <body>
+</head>
+
+<body>
+    <div id="simulation"></div>
+    Speed: Reverse <input type="range" min="-6" max="6" value="1" step="1" onchange="simSpeed=parseInt(this.value);">
+    Forward
     <script src="../lib/three.min.js"></script>
     <script src="../lib/orbit_controls.js"></script>
     <script>
-      //Camera, scene, and renderer
-      var scene = new THREE.Scene();
-      var camera = new THREE.PerspectiveCamera(45, window.innerWidth/window.innerHeight, 1, 2000);
-      scene.add(camera);
-      camera.position.set(0,35,70);
+        var simElement = document.getElementById('simulation');
 
-      var renderer = new THREE.WebGLRenderer({antialias: true});
-      renderer.setSize(window.innerWidth, window.innerHeight);
-      document.body.appendChild(renderer.domElement);
+        //Camera, scene, and renderer
 
-      //Orbit Controls
-      var orbitControls = new THREE.OrbitControls(camera, renderer.domElement);
+        var scene = new THREE.Scene();
+        var camera = new THREE.PerspectiveCamera(45, simElement.offsetWidth / simElement.offsetHeight, 1, 2000);
+        scene.add(camera);
+        camera.position.set(0, 0, 140);
 
-      //Lights
-      var ambientLight = new THREE.AmbientLight(0xf1f1f1);
-      scene.add(ambientLight);
+        var renderer = new THREE.WebGLRenderer({
+            antialias: true
+        });
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap; // default THREE.PCFShadowMap
 
-      var spotLight = new THREE.DirectionalLight(0xffffff);
-      spotLight.position.set(50,50,50);
-      scene.add(spotLight);
+        renderer.setSize(simElement.offsetWidth, simElement.offsetHeight);
+        simElement.appendChild(renderer.domElement);
 
-      //Objects (We build a mesh using a geometry and a material)
+        //Orbit Controls
+        var orbitControls = new THREE.OrbitControls(camera, renderer.domElement);
 
-      //Earth
-      var earthGeometry = new THREE.SphereGeometry(10, 50, 50);
-      var earthMaterial = new THREE.MeshPhongMaterial({
-        map: new THREE.ImageUtils.loadTexture("/images/earth_3.jpg"),
-        color: 0xf2f2f2,
-        specular: 0xbbbbbb,
-        shininess: 2
-      });
-      var earth = new THREE.Mesh(earthGeometry, earthMaterial);
-      scene.add(earth);
+        //Lights
+        var ambientLight = new THREE.AmbientLight(0x202020, 0.01);
+        scene.add(ambientLight);
 
-      //Clouds
-      var cloudGeometry = new THREE.SphereGeometry(10.3,  50, 50);
-      var cloudMaterial = new THREE.MeshPhongMaterial({
-        map: new THREE.ImageUtils.loadTexture("/images/clouds_2.jpg"),
-        transparent: true,
-        opacity: 0.1
-      });
-      var clouds = new THREE.Mesh(cloudGeometry, cloudMaterial);
-      scene.add(clouds);
+        var spotLight = new THREE.SpotLight({
+            color: 0xffffff,
+            intensity: 0.75,
+        });
+        spotLight.castShadow = true; // default false
+        spotLight.position.set(00, 0, 1000);
+        spotLight.shadow.mapSize.width = 1024;
+        spotLight.shadow.mapSize.height = 1024;
+        scene.add(spotLight);
 
-      //Stars
-      var starGeometry = new THREE.SphereGeometry(1000, 50, 50);
-      var starMaterial = new THREE.MeshPhongMaterial({
-        map: new THREE.ImageUtils.loadTexture("/images/galaxy_starfield.png"),
-        side: THREE.DoubleSide,
-        shininess: 0
-      });
-      var starField = new THREE.Mesh(starGeometry, starMaterial);
-      scene.add(starField);
+        var spotLight2 = new THREE.SpotLight({
+            color: 0xffffff,
+            intensity: 0.75,
+        });
+        spotLight2.castShadow = true; // default false
+        spotLight2.position.set(00, 0, 1000);
+        spotLight2.shadow.mapSize.width = 1024;
+        spotLight2.shadow.mapSize.height = 1024;
+        scene.add(spotLight2);
 
-      //Moon 
-      var moonGeometry = new THREE.SphereGeometry(3.5, 50,50);
-      var moonMaterial = new THREE.MeshPhongMaterial({
-        map: THREE.ImageUtils.loadTexture("/images/moon_texture.jpg")
-      });
-      var moon = new THREE.Mesh(moonGeometry, moonMaterial);
-      moon.position.set(35,0,0);
-      scene.add(moon);
+        //Objects (We build a mesh using a geometry and a material)
 
-      //Camera vector
-      var earthVec = new THREE.Vector3(0,0,0);
+        //Earth
+        var earth = new THREE.Group();
 
-      var r = 35;
-      var theta = 0;
-      var dTheta = 2 * Math.PI / 1000;
+        var earthPlanetGeometry = new THREE.SphereGeometry(10, 50, 50);
+        var earthPlanetMaterial = new THREE.MeshPhongMaterial({
+            map: new THREE.ImageUtils.loadTexture("/images/EarthNoClouds.jpg"),
+            color: 0xf2f2f2,
+            specular: 0xbbbbbb,
+            shininess: 2
+        });
+        var earthPlanet = new THREE.Mesh(earthPlanetGeometry, earthPlanetMaterial);
+        earthPlanet.receiveShadow = true;
+        earthPlanet.castShadow = true;
+        earth.add(earthPlanet);
 
-      var dx = .01;
-      var dy = -.01;
-      var dz = -.05;
+        // Earth - Axis
+        var earthAxisGeometry = new THREE.CylinderGeometry(0.1, 0.1, 30, 12);
+        var earthAxisMaterial = new THREE.MeshPhongMaterial({
+            color: 0x00ffff,
+            emissive: 0x00ffff,
+            emissiveIntensity: 0.3,
+            opacity: 0.2
+        });
+        var earthAxis = new THREE.Mesh(earthAxisGeometry, earthAxisMaterial);
+        earth.add(earthAxis);
+
+        earthPlanet.rotation.x += 0.41; // 23.5 degrees in radians
+        earthAxis.rotation.x += 0.41; // 23.5 degrees in radians
+
+        const earthOrbitGeometry = new THREE.TorusGeometry(2000, 0.15, 8, 1000);
+        const earthOrbitMaterial = new THREE.MeshPhongMaterial({
+            color: 0x00ffff,
+            side: THREE.DoubleSide,
+            emissive: 0x00ffff,
+            emissiveIntensity: 0.3,
+            opacity: 0.4,
+            transparent: true,
+        });
+        const earthOrbit = new THREE.Mesh(earthOrbitGeometry, earthOrbitMaterial);
+
+        earthOrbit.position.z += 2000;
+        earthOrbit.rotation.x += Math.PI / 2;
+
+        scene.add(earthOrbit);
+
+        const moonOrbitGeometry = new THREE.TorusGeometry(54, .15, 8, 360);
+        const moonOrbitMaterial = new THREE.MeshPhongMaterial({
+            color: 0x00ff00,
+            side: THREE.DoubleSide,
+            emissive: 0x00ff00,
+            emissiveIntensity: 0.3,
+            opacity: 0.4,
+            transparent: true,
+        });
+        const moonOrbit = new THREE.Mesh(moonOrbitGeometry, moonOrbitMaterial);
+
+        moonOrbit.rotation.y += 0.0872665 * 2; // 5 degrees * 3 (exaggerated);
+        moonOrbit.rotation.x += Math.PI / 2;
+
+
+        scene.add(moonOrbit);
 
 
 
-      //Render loop
-      var render = function() {
-        earth.rotation.y += .0009;
-        clouds.rotation.y += .00005;
+        //Clouds
+        var cloudGeometry = new THREE.SphereGeometry(10.3, 50, 50);
+        var cloudMaterial = new THREE.MeshPhongMaterial({
+            map: new THREE.ImageUtils.loadTexture("/images/clouds_2.jpg"),
+            transparent: true,
+            opacity: 0.1
+        });
 
-        //Moon orbit        
-        theta += dTheta;
-        moon.position.x = r * Math.cos(theta);
-        moon.position.z = r * Math.sin(theta);
+        var clouds = new THREE.Mesh(cloudGeometry, cloudMaterial);
+        clouds.castShadow = false; //default is false
+        earth.add(clouds);
 
-        //Flyby
-        if (camera.position.z < 0) {
-          dx *= -1;
-        }
-        camera.position.x += dx;
-        camera.position.y += dy;
-        camera.position.z += dz;
+        scene.add(earth);
 
-        camera.lookAt(earthVec);
+        //Stars
+        var starGeometry = new THREE.SphereGeometry(1000, 50, 50);
+        var starMaterial = new THREE.MeshPhongMaterial({
+            map: new THREE.ImageUtils.loadTexture("/images/galaxy_starfield.png"),
+            side: THREE.DoubleSide,
+            shininess: 0
+        });
+        var starField = new THREE.Mesh(starGeometry, starMaterial);
+        //scene.add(starField);
 
-        //Flyby reset
-        if (camera.position.z < -100) {
-          camera.position.set(0,35,70);
-        }
+        //Moon 
+        var moon = new THREE.Group();
 
-        camera.lookAt(earthVec);
-        renderer.render(scene, camera);
-        requestAnimationFrame(render);
-      };
-      render();
+        var moonGeometry = new THREE.SphereGeometry(3.5, 50, 50);
+        var moonMaterial = new THREE.MeshPhongMaterial({
+            map: THREE.ImageUtils.loadTexture("/images/moon_texture.jpg")
+        });
+        var moonMoon = new THREE.Mesh(moonGeometry, moonMaterial);
+
+        moonMoon.receiveShadow = true;
+        moonMoon.castShadow = true;
+        moon.add(moonMoon);
+
+        // Moon - Axis
+        var moonAxisGeometry = new THREE.CylinderGeometry(0.1, 0.1, 12, 12);
+        var moonAxisMaterial = new THREE.MeshPhongMaterial({
+            color: 0x00ff00,
+            emissive: 0x00ff00,
+            emissiveIntensity: 0.3,
+            opacity: 0.2
+        });
+        var moonAxis = new THREE.Mesh(moonAxisGeometry, moonAxisMaterial);
+        moon.add(moonAxis);
+
+        moon.position.set(35, 0, 0);
+        moon.rotation.y = Math.PI;
+        moonAxis.rotation.z = -0.0872665 * 2; // 5 degrees * 3 (exaggerated);
+
+        scene.add(moon);
+
+        //Camera vector
+        var earthVec = new THREE.Vector3(0, 0, 0);
+
+        var simSpeed = 1;
+
+        var r = 53.5;
+        var theta = 0;
+        var dTheta = simSpeed * 0.186 * Math.PI / 1000;
+
+        var dx = .01;
+        var dy = -.01;
+        var dz = -.05;
 
 
+
+
+        //Render loop
+        var render = function () {
+            dTheta = simSpeed * 0.186 * Math.PI / 1000;
+
+            earthPlanet.rotation.y += simSpeed * .018;
+            clouds.rotation.y += simSpeed * .01;
+
+            //Moon orbit        
+            theta += dTheta;
+            moon.position.x = r * Math.cos(theta);
+            moon.position.z = r * Math.sin(theta);
+            moon.position.y = r * Math.cos(theta) * 0.0872665 * 2; // 5 degrees * 3 (exaggerated);
+            moon.rotation.y -= dTheta;
+            moonAxis.rotation.y += dTheta;  // remove rotation from axis marker
+
+            /*
+                    //Flyby
+                    if (camera.position.z < 0) {
+                      dx *= -1;
+                    }
+                    camera.position.x += dx;
+                    camera.position.y += dy;
+                    camera.position.z += dz;
+
+                    camera.lookAt(earthVec);
+
+                    //Flyby reset
+                    if (camera.position.z < -100) {
+                      camera.position.set(0,35,70);
+                    }
+            */
+
+            camera.lookAt(earthVec);
+            renderer.render(scene, camera);
+            requestAnimationFrame(render);
+        };
+        render();
     </script>
-  </body>
+</body>
+
 </html>
