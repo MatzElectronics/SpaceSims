@@ -14,20 +14,47 @@
         }
 
         #simulation {
-            height: 480px;
-            width: 640px;
+            height: 450px;
+            width: 800px;
         }
     </style>
 </head>
 
 <body>
+
     <div id="simulation"></div>
-    Speed: Reverse <input type="range" min="-6" max="6" value="1" step="1" onchange="simSpeed=parseInt(this.value);">
-    Forward
+    <p>Speed: Reverse <input type="range" min="-6" max="6" value="1" step="1" onchange="simSpeed=parseInt(this.value);">
+        Forward
+    </p>
+    <p>
+        The Earth:<br>
+        <input type="checkbox" id="earth-axis" name="earth-axis" checked onchange="earthAxis.visible = !earthAxis.visible">
+        <label for="earth-axis">Earth's axis</label>
+    <br>
+        <input type="checkbox" id="earth-orbit" name="earth-orbit" checked onchange="earthOrbit.visible = !earthOrbit.visible">
+        <label for="earth-orbit">Earth's orbit</label>
+    <br>
+        <input type="checkbox" id="earth-plane" name="earth-plane" onchange="earthPlane.visible = !earthPlane.visible">
+        <label for="earth-plane">Earth's plane of orbit</label>
+    </p>
+    <p>
+        The Moon:<br>
+        <input type="checkbox" id="moon-axis" name="moon-axis" checked onchange="moonAxis.visible = !moonAxis.visible">
+        <label for="moon-axis">Moon's axis</label>
+    <br>
+        <input type="checkbox" id="moon-orbit" name="moon-orbit" checked onchange="moonOrbit.visible = !moonOrbit.visible">
+        <label for="moon-orbit">Moon's orbit</label>
+    <br>
+        <input type="checkbox" id="moon-plane" name="moon-plane" onchange="moonPlane.visible = !moonPlane.visible">
+        <label for="moon-plane">Moon's plane of orbit</label>
+    </p>
+
     <script src="../lib/three.min.js"></script>
     <script src="../lib/orbit_controls.js"></script>
     <script>
         var simElement = document.getElementById('simulation');
+        var simSpeed = 1;
+        var orbitRadius = 40;
 
         //Camera, scene, and renderer
 
@@ -36,11 +63,12 @@
         scene.add(camera);
         camera.position.set(0, 0, 140);
 
+
         var renderer = new THREE.WebGLRenderer({
             antialias: true
         });
         renderer.shadowMap.enabled = true;
-        renderer.shadowMap.type = THREE.PCFSoftShadowMap; // default THREE.PCFShadowMap
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap; //THREE.PCFShadowMap; 
 
         renderer.setSize(simElement.offsetWidth, simElement.offsetHeight);
         simElement.appendChild(renderer.domElement);
@@ -49,28 +77,45 @@
         var orbitControls = new THREE.OrbitControls(camera, renderer.domElement);
 
         //Lights
-        var ambientLight = new THREE.AmbientLight(0x202020, 0.01);
+        var ambientLight = new THREE.AmbientLight(0x202020, 0.6);
         scene.add(ambientLight);
 
-        var spotLight = new THREE.SpotLight({
-            color: 0xffffff,
-            intensity: 0.75,
-        });
+        var spotLight = new THREE.DirectionalLight(0xffffff, 1);
         spotLight.castShadow = true; // default false
-        spotLight.position.set(00, 0, 1000);
+        spotLight.position.set(0, 0, 400);
         spotLight.shadow.mapSize.width = 1024;
         spotLight.shadow.mapSize.height = 1024;
+        spotLight.shadow.camera.near = 2; // default
+        spotLight.shadow.camera.far = 1500; // 
+        spotLight.shadow.camera.top = 100; // 
+        spotLight.shadow.camera.left = -100; // 
+        spotLight.shadow.camera.right = 100; // 
+        spotLight.shadow.camera.bottom = -100; // 
         scene.add(spotLight);
 
-        var spotLight2 = new THREE.SpotLight({
-            color: 0xffffff,
-            intensity: 0.75,
-        });
-        spotLight2.castShadow = true; // default false
-        spotLight2.position.set(00, 0, 1000);
-        spotLight2.shadow.mapSize.width = 1024;
-        spotLight2.shadow.mapSize.height = 1024;
+        //Create a helper for the shadow camera (optional)
+        //const helper = new THREE.CameraHelper( spotLight.shadow.camera );
+        //scene.add( helper );
+
+        //const spotLightHelper = new THREE.SpotLightHelper( spotLight );
+        //scene.add( spotLightHelper );
+
+        var spotLight2 = new THREE.DirectionalLight(0xffffff, 0.6);
+        spotLight2.copy(spotLight);
+        spotLight.position.set(0, 0, 600);
         scene.add(spotLight2);
+
+        /*
+        const starLight = new THREE.SpotLight(0xffffff, 1, 0, Math.PI / 2);
+        starLight.position.set( 0, 0, 100 );
+        starLight.castShadow = false;
+        starLight.target = spotLight;
+        scene.add(starLight);
+        */
+
+        //const spotLightHelper = new THREE.SpotLightHelper( starLight );
+        //scene.add( spotLightHelper );
+
 
         //Objects (We build a mesh using a geometry and a material)
 
@@ -79,7 +124,7 @@
 
         var earthPlanetGeometry = new THREE.SphereGeometry(10, 50, 50);
         var earthPlanetMaterial = new THREE.MeshPhongMaterial({
-            map: new THREE.ImageUtils.loadTexture("../images/EarthNoClouds.jpg"),
+            map: new THREE.TextureLoader().load("../images/EarthNoClouds.jpg"),
             color: 0xf2f2f2,
             specular: 0xbbbbbb,
             shininess: 2
@@ -90,25 +135,36 @@
         earth.add(earthPlanet);
 
         // Earth - Axis
-        var earthAxisGeometry = new THREE.CylinderGeometry(0.1, 0.1, 30, 12);
+        var earthAxisGeometry = new THREE.CylinderGeometry(0.1, 0.1, 30, 16);
         var earthAxisMaterial = new THREE.MeshPhongMaterial({
             color: 0x00ffff,
             emissive: 0x00ffff,
-            emissiveIntensity: 0.3,
             opacity: 0.2
         });
         var earthAxis = new THREE.Mesh(earthAxisGeometry, earthAxisMaterial);
         earth.add(earthAxis);
 
+        var earthPlaneGeometry = new THREE.CylinderGeometry(2000, 2000, 0.1, 720);
+        var earthPlaneMaterial = new THREE.MeshPhongMaterial({
+            color: 0x00ffff,
+            emissive: 0x00ffff,
+            opacity: 0.1,
+            transparent: true,
+        });
+        var earthPlane = new THREE.Mesh(earthPlaneGeometry, earthPlaneMaterial);
+        earthPlane.position.z += 2000;
+
+        scene.add(earthPlane);
+
+
         earthPlanet.rotation.x += 0.41; // 23.5 degrees in radians
         earthAxis.rotation.x += 0.41; // 23.5 degrees in radians
 
-        const earthOrbitGeometry = new THREE.TorusGeometry(2000, 0.15, 8, 1000);
+        const earthOrbitGeometry = new THREE.TorusGeometry(2000, 0.15, 16, 1000);
         const earthOrbitMaterial = new THREE.MeshPhongMaterial({
             color: 0x00ffff,
             side: THREE.DoubleSide,
             emissive: 0x00ffff,
-            emissiveIntensity: 0.3,
             opacity: 0.4,
             transparent: true,
         });
@@ -119,12 +175,11 @@
 
         scene.add(earthOrbit);
 
-        const moonOrbitGeometry = new THREE.TorusGeometry(54, .15, 8, 360);
+        const moonOrbitGeometry = new THREE.TorusGeometry(orbitRadius + .5, .1, 16, 360);
         const moonOrbitMaterial = new THREE.MeshPhongMaterial({
             color: 0x00ff00,
             side: THREE.DoubleSide,
             emissive: 0x00ff00,
-            emissiveIntensity: 0.3,
             opacity: 0.4,
             transparent: true,
         });
@@ -132,16 +187,40 @@
 
         moonOrbit.rotation.y += 0.0872665 * 2; // 5 degrees * 3 (exaggerated);
         moonOrbit.rotation.x += Math.PI / 2;
-
-
         scene.add(moonOrbit);
+
+        var moonPlaneGeometry = new THREE.CylinderGeometry(orbitRadius + .5, orbitRadius + .5, 0.1, 360);
+        var moonPlaneMaterial = new THREE.MeshPhongMaterial({
+            color: 0x00ff00,
+            emissive: 0x00ff00,
+            opacity: 0.1,
+            transparent: true,
+        });
+        var moonPlane = new THREE.Mesh(moonPlaneGeometry, moonPlaneMaterial);
+
+        moonPlane.rotation.z += 0.0872665 * 2; // 5 degrees * 3 (exaggerated);
+        scene.add(moonPlane);
+
+
+        //Sun
+        var sunGeometry = new THREE.SphereGeometry(10, 50, 50);
+        var sunMaterial = new THREE.MeshPhongMaterial({
+            map: new THREE.TextureLoader().load("../textures/sun_texture.jpg"),
+            emissive: 0xffffbb
+        });
+
+        var sun = new THREE.Mesh(sunGeometry, sunMaterial);
+        sun.position.set(0, 0, 1000);
+        sun.castShadow = false; //default is false
+        sun.receiveShadow = false;
+        scene.add(sun);
 
 
 
         //Clouds
         var cloudGeometry = new THREE.SphereGeometry(10.3, 50, 50);
         var cloudMaterial = new THREE.MeshPhongMaterial({
-            map: new THREE.ImageUtils.loadTexture("../images/clouds_2.jpg"),
+            map: new THREE.TextureLoader().load("../images/clouds_2.jpg"),
             transparent: true,
             opacity: 0.1
         });
@@ -154,33 +233,56 @@
 
         //Stars
         var starGeometry = new THREE.SphereGeometry(1000, 50, 50);
-        var starMaterial = new THREE.MeshPhongMaterial({
-            map: new THREE.ImageUtils.loadTexture("../images/galaxy_starfield.png"),
+        var starMaterial = new THREE.MeshBasicMaterial({
+            map: new THREE.TextureLoader().load("../images/galaxy_starfield.png"),
             side: THREE.DoubleSide,
-            shininess: 0
+            //shininess: 0
         });
         var starField = new THREE.Mesh(starGeometry, starMaterial);
-        //scene.add(starField);
+        scene.add(starField);
 
         //Moon 
         var moon = new THREE.Group();
 
-        var moonGeometry = new THREE.SphereGeometry(3.5, 50, 50);
+        var moonGeometry = new THREE.SphereGeometry(2.5, 50, 50);
         var moonMaterial = new THREE.MeshPhongMaterial({
-            map: THREE.ImageUtils.loadTexture("../images/moon_texture.jpg")
+            map: new THREE.TextureLoader().load("../images/moon_texture.jpg")
         });
         var moonMoon = new THREE.Mesh(moonGeometry, moonMaterial);
 
         moonMoon.receiveShadow = true;
-        moonMoon.castShadow = true;
+        moonMoon.castShadow = false;
         moon.add(moonMoon);
+
+        //Moon Core (for making a smaller shadow)
+        var moonCoreGeometry = new THREE.SphereGeometry(.5, 40, 40);
+        var moonCoreMaterial = new THREE.MeshBasicMaterial({
+            color: 0xffffff
+        });
+        var moonCore = new THREE.Mesh(moonCoreGeometry, moonCoreMaterial);
+
+        moonCore.receiveShadow = false;
+        moonCore.castShadow = true;
+        moon.add(moonCore);
+
+        //Moon Shader (for making the penumbra shadow)
+        var moonShaderGeometry = new THREE.SphereGeometry(2.5, 40, 40);
+        var moonShaderMaterial = new THREE.MeshPhongMaterial({
+            color: 0x000000,
+            opacity: 0.001,
+            transparent: true,
+        });
+        var moonShader = new THREE.Mesh(moonShaderGeometry, moonShaderMaterial);
+
+        moonShader.receiveShadow = false;
+        moonShader.castShadow = true;
+        scene.add(moonShader);
 
         // Moon - Axis
         var moonAxisGeometry = new THREE.CylinderGeometry(0.1, 0.1, 12, 12);
         var moonAxisMaterial = new THREE.MeshPhongMaterial({
             color: 0x00ff00,
             emissive: 0x00ff00,
-            emissiveIntensity: 0.3,
             opacity: 0.2
         });
         var moonAxis = new THREE.Mesh(moonAxisGeometry, moonAxisMaterial);
@@ -195,9 +297,6 @@
         //Camera vector
         var earthVec = new THREE.Vector3(0, 0, 0);
 
-        var simSpeed = 1;
-
-        var r = 53.5;
         var theta = 0;
         var dTheta = simSpeed * 0.186 * Math.PI / 1000;
 
@@ -205,7 +304,11 @@
         var dy = -.01;
         var dz = -.05;
 
-
+        earthPlane.visible = false;
+        moonPlane.visible = false;
+        
+        //const axesHelper = new THREE.AxesHelper( 100 );
+        //scene.add( axesHelper );
 
 
         //Render loop
@@ -217,11 +320,19 @@
 
             //Moon orbit        
             theta += dTheta;
-            moon.position.x = r * Math.cos(theta);
-            moon.position.z = r * Math.sin(theta);
-            moon.position.y = r * Math.cos(theta) * 0.0872665 * 2; // 5 degrees * 3 (exaggerated);
+            moon.position.x = orbitRadius * Math.cos(theta);
+
+            moonShader.position.y = moon.position.y;
+            moonShader.position.z = 500;
+            moonShader.position.x = moon.position.x;
+            var shadowCondition = (moon.position.z > 0);
+            moonMoon.receiveShadow = !shadowCondition;
+            moonShader.castShadow = shadowCondition;
+
+            moon.position.z = orbitRadius * Math.sin(theta);
+            moon.position.y = orbitRadius * Math.cos(theta) * 0.0872665 * 2; // 5 degrees * 3 (exaggerated);
             moon.rotation.y -= dTheta;
-            moonAxis.rotation.y += dTheta;  // remove rotation from axis marker
+            moonAxis.rotation.y += dTheta; // remove rotation from axis marker
 
             /*
                     //Flyby
