@@ -17,28 +17,58 @@
             height: 450px;
             width: 800px;
         }
+
+        .moon {
+            fill: rgba(0, 0, 0, 0.85);
+            stroke: rgba(0, 0, 0, 0.85);
+            stroke-width: 2;
+        }
+
+        #moonbox {
+            background-color: black;
+        }
     </style>
 </head>
 
 <body>
 
     <div id="simulation"></div>
+    <div id="moon-phase-display">
+        <svg id="moonbox" width="200px" height="200px" viewBox="0 0 170 170" xmlns="http://www.w3.org/2000/svg"
+            xmlns:xlink="http://www.w3.org/1999/xlink">
+            <defs>
+                <pattern id="img1" patternUnits="userSpaceOnUse" width="400" height="400">
+                    <image href="../images/moon.jpg" x="15" y="15" width="140" height="140" />
+                </pattern>
+            </defs>
+            <filter id="blurEdge">
+                <feGaussianBlur in="SourceGraphic" stdDeviation="3" />
+            </filter>
+            <rect fill="url(#img1)" x="10" y="10" width="150" height="150" />
+            <path class="moon" filter="url(#blurEdge)" />
+        </svg>
+    </div>
     <p>
-        Month: <input type="range" min="0" max="11" value="0" step="1" onchange="setMonthAngle(parseInt(270 + this.value * 30));">
+        Month:
+        <button onclick="setMonthAngle(Math.round(monthOffset * 180 / Math.PI) - 30);">Previous</button>
         <span id="month-name">January</span>
+        <button onclick="setMonthAngle(Math.round(monthOffset * 180 / Math.PI) + 30);">Next</button>
     </p>
 
     <p>
-        Speed: Reverse <input type="range" min="-6" max="6" value="1" step="1" onchange="simSpeed = parseInt(this.value * 1.5);"> Forward
+        Speed: Reverse <input type="range" min="-6" max="6" value="1" step="1"
+            onchange="simSpeed = parseInt(this.value * 1.5);"> Forward
     </p>
     <p>
         The Earth:<br>
-        <input type="checkbox" id="earth-axis" name="earth-axis" checked onchange="earthAxis.visible = !earthAxis.visible">
+        <input type="checkbox" id="earth-axis" name="earth-axis" checked
+            onchange="earthAxis.visible = !earthAxis.visible">
         <label for="earth-axis">Earth's axis</label>
-    <br>
-        <input type="checkbox" id="earth-orbit" name="earth-orbit" checked onchange="earthOrbit.visible = !earthOrbit.visible">
+        <br>
+        <input type="checkbox" id="earth-orbit" name="earth-orbit" checked
+            onchange="earthOrbit.visible = !earthOrbit.visible">
         <label for="earth-orbit">Earth's orbit</label>
-    <br>
+        <br>
         <input type="checkbox" id="earth-plane" name="earth-plane" onchange="earthPlane.visible = !earthPlane.visible">
         <label for="earth-plane">Earth's plane of orbit</label>
     </p>
@@ -46,10 +76,11 @@
         The Moon:<br>
         <input type="checkbox" id="moon-axis" name="moon-axis" checked onchange="moonAxis.visible = !moonAxis.visible">
         <label for="moon-axis">Moon's axis</label>
-    <br>
-        <input type="checkbox" id="moon-orbit" name="moon-orbit" checked onchange="moonOrbit.visible = !moonOrbit.visible">
+        <br>
+        <input type="checkbox" id="moon-orbit" name="moon-orbit" checked
+            onchange="moonOrbit.visible = !moonOrbit.visible">
         <label for="moon-orbit">Moon's orbit</label>
-    <br>
+        <br>
         <input type="checkbox" id="moon-plane" name="moon-plane" onchange="moonPlane.visible = !moonPlane.visible">
         <label for="moon-plane">Moon's plane of orbit</label>
     </p>
@@ -59,9 +90,9 @@
     <script>
         var simElement = document.getElementById('simulation');
         var simSpeed = 1;
-        var moonOrbitRadius = 30;   // 60
+        var moonOrbitRadius = 30; // 60
         var moonOrbitOffset = 15;
-        var moonSize = 4;   // 1.8
+        var moonSize = 4; // 1.8
         var monthOffset = 0; //90 * (Math.PI / 180);
         var eclipses = true;
 
@@ -119,7 +150,7 @@
             map: new THREE.TextureLoader().load("../images/EarthNoClouds.jpg"),
             color: 0xf2f2f2,
             specular: 0xaaaaaa,
-            shininess: 1.5
+            shininess: 1.2
         });
         var earthPlanet = new THREE.Mesh(earthPlanetGeometry, earthPlanetMaterial);
         earthPlanet.receiveShadow = eclipses;
@@ -128,7 +159,7 @@
 
         //Clouds
         var cloudGeometry = new THREE.SphereGeometry(10.3, 50, 50);
-        var cloudMaterial = new THREE.MeshPhongMaterial({
+        var cloudMaterial = new THREE.MeshLambertMaterial({
             map: new THREE.TextureLoader().load("../images/clouds_2.jpg"),
             transparent: true,
             opacity: 0.1
@@ -139,17 +170,16 @@
 
         // Earth - Axis
         var earthAxisGeometry = new THREE.CylinderGeometry(0.1, 0.1, 30, 16);
-        var earthAxisMaterial = new THREE.MeshPhongMaterial({
+        var earthAxisMaterial = new THREE.MeshLambertMaterial({
             color: 0x00ffff,
             emissive: 0x00ffff,
-            opacity: 0.2
         });
         var earthAxis = new THREE.Mesh(earthAxisGeometry, earthAxisMaterial);
         earth.add(earthAxis);
 
         // Earth - Orbital Plane
         var earthPlaneGeometry = new THREE.CylinderGeometry(2000, 2000, 0.1, 720);
-        var earthPlaneMaterial = new THREE.MeshPhongMaterial({
+        var earthPlaneMaterial = new THREE.MeshLambertMaterial({
             color: 0x00ffff,
             emissive: 0x00ffff,
             opacity: 0.1,
@@ -160,25 +190,41 @@
         scene.add(earthPlane);
 
         // Earth - Orbit
-        const earthOrbitGeometry = new THREE.TorusGeometry(2000, 0.15, 16, 1000);
-        const earthOrbitMaterial = new THREE.MeshPhongMaterial({
+        var earthOrbitGeometry = new THREE.TorusGeometry(2000, 0.15, 16, 1000);
+        var earthOrbitMaterial = new THREE.MeshLambertMaterial({
             color: 0x00ffff,
             side: THREE.DoubleSide,
             emissive: 0x00ffff,
             opacity: 0.4,
             transparent: true,
         });
-        const earthOrbit = new THREE.Mesh(earthOrbitGeometry, earthOrbitMaterial);
+        var earthOrbit = new THREE.Mesh(earthOrbitGeometry, earthOrbitMaterial);
         earthOrbit.position.z = 2000;
         earthOrbit.rotation.x = Math.PI / 2;
         scene.add(earthOrbit);
+
+        var sunRayGeometry = new THREE.CylinderGeometry(0.3, 0.3, 30, 16);
+        var sunRayMaterial = new THREE.MeshLambertMaterial({
+            color: 0xffff88,
+            emissive: 0xffff88,
+            opacity: 0.6,
+            transparent: true
+        });
+        var sunRays = [];
+        for (var ii = 0; ii < 10; ii++) {
+            sunRays.push(new THREE.Mesh(sunRayGeometry, sunRayMaterial));
+            sunRays[ii].rotation.x = Math.PI / 2;
+            sunRays[ii].position.z = 12;
+            sunRays[ii].position.y = 9 - ii * 2;
+            scene.add(sunRays[ii]);
+        }
 
         scene.add(earth);
 
 
         //Sun
         var sunGeometry = new THREE.SphereGeometry(10, 50, 50);
-        var sunMaterial = new THREE.MeshPhongMaterial({
+        var sunMaterial = new THREE.MeshLambertMaterial({
             map: new THREE.TextureLoader().load("../textures/sun_texture.jpg"),
             emissive: 0xffffbb
         });
@@ -200,8 +246,8 @@
         //Moon 
         var moon = new THREE.Group();
         var moonGeometry = new THREE.SphereGeometry(moonSize, 50, 50);
-        var moonMaterial = new THREE.MeshPhongMaterial({
-            map: new THREE.TextureLoader().load("../images/moon_texture.jpg")
+        var moonMaterial = new THREE.MeshLambertMaterial({
+            map: new THREE.TextureLoader().load("../images/moon_texture2.jpg"),
         });
         var moonMoon = new THREE.Mesh(moonGeometry, moonMaterial);
         moonMoon.receiveShadow = eclipses;
@@ -209,20 +255,20 @@
         moon.add(moonMoon);
 
         // Moon - Orbit
-        const moonOrbitGeometry = new THREE.TorusGeometry(moonOrbitRadius, .1, 16, 360);
-        const moonOrbitMaterial = new THREE.MeshPhongMaterial({
+        var moonOrbitGeometry = new THREE.TorusGeometry(moonOrbitRadius, .1, 16, 360);
+        var moonOrbitMaterial = new THREE.MeshLambertMaterial({
             color: 0x00ff00,
             side: THREE.DoubleSide,
             emissive: 0x00ff00,
             opacity: 0.4,
             transparent: true,
         });
-        const moonOrbit = new THREE.Mesh(moonOrbitGeometry, moonOrbitMaterial);
+        var moonOrbit = new THREE.Mesh(moonOrbitGeometry, moonOrbitMaterial);
         scene.add(moonOrbit);
 
         // Moon - Orbital Plane
         var moonPlaneGeometry = new THREE.CylinderGeometry(moonOrbitRadius, moonOrbitRadius, 0.1, 360);
-        var moonPlaneMaterial = new THREE.MeshPhongMaterial({
+        var moonPlaneMaterial = new THREE.MeshLambertMaterial({
             color: 0x00ff00,
             emissive: 0x00ff00,
             opacity: 0.1,
@@ -245,22 +291,21 @@
 
         // Moon - Axis
         var moonAxisGeometry = new THREE.CylinderGeometry(0.1, 0.1, moonSize * 3, 16);
-        var moonAxisMaterial = new THREE.MeshPhongMaterial({
+        var moonAxisMaterial = new THREE.MeshLambertMaterial({
             color: 0x00ff00,
             emissive: 0x00ff00,
-            opacity: 0.2
         });
         var moonAxis = new THREE.Mesh(moonAxisGeometry, moonAxisMaterial);
         moonAxis.rotation.z = -moonOrbitOffset * (Math.PI / 180); // moonOrbitOffset degrees (exaggerated);
         moon.add(moonAxis);
 
-        moon.rotation.y = Math.PI;  // Turn the correct face toward the earth
+        moon.rotation.y = Math.PI; // Turn the correct face toward the earth
         scene.add(moon);
 
         if (eclipses) {
             //Moon Shader (for making the penumbra shadow)
             var moonShaderGeometry = new THREE.SphereGeometry(moonSize * 1.25, 40, 40);
-            var moonShaderMaterial = new THREE.MeshPhongMaterial({
+            var moonShaderMaterial = new THREE.MeshBasicMaterial({
                 color: 0x000000,
                 opacity: 0.001,
                 transparent: true,
@@ -280,39 +325,56 @@
         moonPlane.visible = false;
 
         function setMonthAngle(offsetAngle) {
-            var monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-            document.getElementById('month-name').innerHTML = monthNames[((offsetAngle || 270) - 270) / 30];
-            if (offsetAngle) {
+            if (offsetAngle === 0) {
+                monthOffset = 0;
+            } else if (offsetAngle) {
+                offsetAngle = (offsetAngle >= 360 ? offsetAngle - 360 : (offsetAngle < 0 ? offsetAngle + 360 :
+                    offsetAngle));
                 monthOffset = offsetAngle * Math.PI / 180;
+            } else {
+                offsetAngle = 0;
+                monthOffset = 0;
             }
 
-            earthPlanet.rotation.x = 23.5 * (Math.PI / 180) * Math.sin(monthOffset);
-            earthAxis.rotation.x = 23.5 * (Math.PI / 180) * Math.sin(monthOffset);
-            earthPlanet.rotation.z = 23.5 * (Math.PI / 180) * Math.cos(monthOffset);
-            earthAxis.rotation.z = 23.5 * (Math.PI / 180) * Math.cos(monthOffset);
+            var monthNames = ['April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December',
+                'January', 'February', 'March'
+            ];
+            document.getElementById('month-name').innerHTML = monthNames[(offsetAngle) / 30];
 
-            moonPlane.rotation.z = moonOrbitOffset * (Math.PI / 180) * Math.cos(-monthOffset); // moonOrbitOffset degrees (exaggerated);
+            earth.rotation.x = 23.5 * (Math.PI / 180) * Math.sin(monthOffset);
+            earth.rotation.z = 23.5 * (Math.PI / 180) * Math.cos(monthOffset);
+
+            moonPlane.rotation.z = moonOrbitOffset * (Math.PI / 180) * Math.cos(-
+            monthOffset); // moonOrbitOffset degrees (exaggerated);
             moonPlane.rotation.x = moonOrbitOffset * (Math.PI / 180) * Math.sin(-monthOffset);
-            moonOrbit.rotation.y = moonOrbitOffset * (Math.PI / 180) * Math.cos(-monthOffset); // moonOrbitOffset degrees (exaggerated);
+            moonOrbit.rotation.y = moonOrbitOffset * (Math.PI / 180) * Math.cos(-
+            monthOffset); // moonOrbitOffset degrees (exaggerated);
             moonOrbit.rotation.x = Math.PI / 2 + moonOrbitOffset * (Math.PI / 180) * Math.sin(-monthOffset);
-            moon.rotation.y = Math.PI - monthOffset;  // Turn the correct face toward the earth
         }
 
         setMonthAngle();
 
         //Render loop
         var render = function () {
-            var dTheta = simSpeed * 0.025 * Math.PI / 180;  // 0.5 degrees/step
+            var dTheta = simSpeed * 0.025 * Math.PI / 180; // 0.5 degrees/step
 
             earthPlanet.rotation.y += simSpeed * .017;
             clouds.rotation.y += simSpeed * .01;
 
             //Moon orbit        
-            theta += dTheta;
+            theta -= dTheta;
+            if (theta < 0) {
+                theta += Math.PI * 2;
+            }
 
-            moon.position.x = moonOrbitRadius * Math.cos(theta) * 0.96; // Not sure why these fudge factors are needed...stupid floating point rounding garbage probably...
+            var phaseRadians = (theta + Math.PI / 2) / (Math.PI * 2);
+            drawPhase(1 - phaseRadians + Math.floor(phaseRadians));
+
+            moon.position.x = moonOrbitRadius * Math.cos(theta) *
+            0.96; // Not sure why these fudge factors are needed...stupid floating point rounding garbage probably...
             moon.position.z = moonOrbitRadius * Math.sin(theta) * 0.99;
-            moon.position.y = moonOrbitRadius * Math.cos(theta - monthOffset) * moonOrbitOffset * (Math.PI / 180); // moonOrbitOffset degrees (exaggerated);
+            moon.position.y = moonOrbitRadius * Math.cos(theta - monthOffset) * moonOrbitOffset * (Math.PI /
+            180); // moonOrbitOffset degrees (exaggerated);
 
             moonShader.position.x = moon.position.x;
             moonShader.position.z = 500;
@@ -322,8 +384,8 @@
             moonMoon.receiveShadow = !shadowCondition;
             moonShader.castShadow = shadowCondition;
 
-            moon.rotation.y -= dTheta;
-            moonAxis.rotation.y += dTheta; // remove rotation from axis marker
+            moon.rotation.y += dTheta;
+            moonAxis.rotation.y -= dTheta; // remove rotation from axis marker
 
 
             camera.lookAt(earthVec);
@@ -331,6 +393,27 @@
             requestAnimationFrame(render);
         };
         render();
+
+        function drawPhase(phase) {
+            var sweep = [];
+            var mag;
+            if (phase <= 0.25) {
+                sweep = [1, 0];
+                mag = 20 - 20 * phase * 4;
+            } else if (phase <= 0.50) {
+                sweep = [0, 0];
+                mag = 20 * (phase - 0.25) * 4;
+            } else if (phase <= 0.75) {
+                sweep = [1, 1];
+                mag = 20 - 20 * (phase - 0.50) * 4;
+            } else if (phase <= 1) {
+                sweep = [0, 1];
+                mag = 20 * (phase - 0.75) * 4;
+            }
+            var d = "m85,10 a" + mag + ",20 0 1," + sweep[0] + " 0,150 a20,20 0 1," + sweep[1] + " 0,-150";
+            var path = document.querySelector('.moon');
+            path.setAttribute('d', d);
+        }
     </script>
 </body>
 
