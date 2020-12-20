@@ -2,10 +2,20 @@
 
 <head>
     <title>Spheres</title>
+
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link href="https://fonts.googleapis.com/css2?family=Ubuntu:wght@400;700&display=swap" rel="stylesheet">
     <style>
         body {
-            margin: 20px;
-            background-color: #fff;
+            margin: 0;
+            background-color: #000;
+            overflow: hidden;
+            font-family: 'Ubuntu', sans-serif;
+        }
+
+        h3 {
+            font-weight: 700;
+            margin-top: 0px;
         }
 
         canvas {
@@ -14,8 +24,8 @@
         }
 
         #simulation {
-            height: 450px;
-            width: 800px;
+            height: 100vh;
+            width: 100vw;
         }
 
         .moon {
@@ -26,6 +36,63 @@
 
         #moonbox {
             background-color: black;
+        }
+
+        #month-name {
+            display: inline-block;
+            width: 85px;
+            text-align: center;
+        }
+
+        .control-panel, .control-subpanel {
+            z-index: 1000;
+            background: rgba(0, 0, 64, 0.7);
+            padding: 20px;
+            color: white;
+            border-radius: 10px;
+            border: 2px solid white;
+        }
+
+        .control-panel, .control-group {
+            position: absolute;
+        }
+
+        #controls-month {
+            top: 20px;
+            left: 20px;
+        }
+
+        #controls-speed {
+            top: 20px;
+            right: 20px;
+        }
+
+        #slider-container {
+            margin: 0;
+        }
+
+        #controls-subpanel {
+            bottom: 20px;
+            left: 0px;
+            display: flex;
+            width: calc(100vw - 244px);
+        }
+
+        #controls-subpanel > div {
+            margin-left: 20px;
+        }
+
+        #moon-phase-display {
+            position: absolute;
+            z-index: 1000;
+            bottom: 20px;
+            right: 20px;
+            border-radius: 10px;
+            border: 2px solid white;
+        }
+
+        #moon-phase-display>svg {
+            border-radius: 10px;
         }
     </style>
 </head>
@@ -48,43 +115,68 @@
             <path class="moon" filter="url(#blurEdge)" />
         </svg>
     </div>
-    <p>
-        Month:
-        <button onclick="setMonthAngle(Math.round(monthOffset * 180 / Math.PI) - 30);">Previous</button>
-        <span id="month-name">January</span>
-        <button onclick="setMonthAngle(Math.round(monthOffset * 180 / Math.PI) + 30);">Next</button>
-    </p>
+    <div id="controls">
+        <div id="controls-month" class="control-panel">
+            <h3>Month:</h3>
+            <button onclick="setMonthAngle(Math.round(monthOffset * 180 / Math.PI) - 30);">&#9668;</button>
+            <span id="month-name">January</span>
+            <button onclick="setMonthAngle(Math.round(monthOffset * 180 / Math.PI) + 30);">&#9658;</button>
+        </div>
 
-    <p>
-        Speed: Reverse <input type="range" min="-6" max="6" value="1" step="1"
-            onchange="simSpeed = parseInt(this.value * 1.5);"> Forward
-    </p>
-    <p>
-        The Earth:<br>
-        <input type="checkbox" id="earth-axis" name="earth-axis" checked
-            onchange="earthAxis.visible = !earthAxis.visible">
-        <label for="earth-axis">Earth's axis</label>
-        <br>
-        <input type="checkbox" id="earth-orbit" name="earth-orbit" checked
-            onchange="earthOrbit.visible = !earthOrbit.visible">
-        <label for="earth-orbit">Earth's orbit</label>
-        <br>
-        <input type="checkbox" id="earth-plane" name="earth-plane" onchange="earthPlane.visible = !earthPlane.visible">
-        <label for="earth-plane">Earth's plane of orbit</label>
-    </p>
-    <p>
-        The Moon:<br>
-        <input type="checkbox" id="moon-axis" name="moon-axis" checked onchange="moonAxis.visible = !moonAxis.visible">
-        <label for="moon-axis">Moon's axis</label>
-        <br>
-        <input type="checkbox" id="moon-orbit" name="moon-orbit" checked
-            onchange="moonOrbit.visible = !moonOrbit.visible">
-        <label for="moon-orbit">Moon's orbit</label>
-        <br>
-        <input type="checkbox" id="moon-plane" name="moon-plane" onchange="moonPlane.visible = !moonPlane.visible">
-        <label for="moon-plane">Moon's plane of orbit</label>
-    </p>
-
+        <div id="controls-speed" class="control-panel">
+            <h3>Speed:</h3>
+            <div id="slider-container">
+                <input id="sim-speed-slider" type="range" min="-6" max="6" value="1" step="1" onchange="simSpeed = parseInt(this.value * 1.5);"><br>
+            </div>
+            Reverse&nbsp;&nbsp;
+            <button onclick="simSpeed = 0; document.getElementById('sim-speed-slider').value = 0;">Stop</button>
+            &nbsp;&nbsp;Forward
+        </div>
+        <div id="controls-subpanel" class="control-group">
+            <div id="controls-earth" class="control-subpanel">
+                <h3>The Earth:</h3>
+                <input type="checkbox" id="earth-axis" name="earth-axis" checked
+                    onchange="earthAxis.visible = !earthAxis.visible">
+                <label for="earth-axis">Earth's axis</label>
+                <br>
+                <input type="checkbox" id="earth-orbit" name="earth-orbit" checked
+                    onchange="earthOrbit.visible = !earthOrbit.visible">
+                <label for="earth-orbit">Earth's orbit</label>
+                <br>
+                <input type="checkbox" id="earth-plane" name="earth-plane"
+                    onchange="earthPlane.visible = !earthPlane.visible">
+                <label for="earth-plane">Earth's plane of orbit</label>
+            </div>
+            <div id="controls-moon" class="control-subpanel">
+                <h3>The Moon:</h3>
+                <input type="checkbox" id="moon-axis" name="moon-axis" checked
+                    onchange="moonAxis.visible = !moonAxis.visible">
+                <label for="moon-axis">Moon's axis</label>
+                <br>
+                <input type="checkbox" id="moon-orbit" name="moon-orbit" checked
+                    onchange="moonOrbit.visible = !moonOrbit.visible">
+                <label for="moon-orbit">Moon's orbit</label>
+                <br>
+                <input type="checkbox" id="moon-plane" name="moon-plane"
+                    onchange="moonPlane.visible = !moonPlane.visible">
+                <label for="moon-plane">Moon's plane of orbit</label>
+            </div>
+            <div id="controls-sun" class="control-subpanel">
+                <h3>Sunlight:</h3>
+                <input type="checkbox" id="moon-axis" name="moon-axis" checked
+                    onchange="sunRays.visible = !sunRays.visible">
+                <label for="sun-rays">Sun's Rays:</label>
+                <br>
+                <input type="checkbox" id="moon-orbit" name="moon-orbit" checked
+                    onchange="">
+                <label for="earth-shadows">Earth's Shadows</label>
+                <br>
+                <input type="checkbox" id="moon-plane" name="moon-plane"
+                    onchange="">
+                <label for="moon-shadows">Moon's Shadows</label>
+            </div>
+        </div>
+    </div>
     <script src="../lib/three.min.js"></script>
     <script src="../lib/orbit_controls.js"></script>
     <script>
@@ -203,23 +295,29 @@
         earthOrbit.rotation.x = Math.PI / 2;
         scene.add(earthOrbit);
 
-        var sunRayGeometry = new THREE.CylinderGeometry(0.3, 0.3, 30, 16);
+
+
+        // Sun rays
+        var sunRays = new THREE.Group();
+        var sunRayGeometry = new THREE.CylinderGeometry(0.5, 0.5, 30, 4);
         var sunRayMaterial = new THREE.MeshLambertMaterial({
             color: 0xffff88,
             emissive: 0xffff88,
-            opacity: 0.6,
+            opacity: 0.4,
             transparent: true
         });
-        var sunRays = [];
+        var sunRayArray = [];
         for (var ii = 0; ii < 10; ii++) {
-            sunRays.push(new THREE.Mesh(sunRayGeometry, sunRayMaterial));
-            sunRays[ii].rotation.x = Math.PI / 2;
-            sunRays[ii].position.z = 12;
-            sunRays[ii].position.y = 9 - ii * 2;
-            scene.add(sunRays[ii]);
+            sunRayArray.push(new THREE.Mesh(sunRayGeometry, sunRayMaterial));
+            sunRayArray[ii].rotation.x = Math.PI / 2;
+            sunRayArray[ii].position.z = 12;
+            sunRayArray[ii].position.y = 9 - ii * 2;
+            sunRayArray[ii].rotation.y = Math.PI / 4;
+            sunRays.add(sunRayArray[ii]);
         }
 
         scene.add(earth);
+        scene.add(sunRays);
 
 
         //Sun
@@ -345,10 +443,10 @@
             earth.rotation.z = 23.5 * (Math.PI / 180) * Math.cos(monthOffset);
 
             moonPlane.rotation.z = moonOrbitOffset * (Math.PI / 180) * Math.cos(-
-            monthOffset); // moonOrbitOffset degrees (exaggerated);
+                monthOffset); // moonOrbitOffset degrees (exaggerated);
             moonPlane.rotation.x = moonOrbitOffset * (Math.PI / 180) * Math.sin(-monthOffset);
             moonOrbit.rotation.y = moonOrbitOffset * (Math.PI / 180) * Math.cos(-
-            monthOffset); // moonOrbitOffset degrees (exaggerated);
+                monthOffset); // moonOrbitOffset degrees (exaggerated);
             moonOrbit.rotation.x = Math.PI / 2 + moonOrbitOffset * (Math.PI / 180) * Math.sin(-monthOffset);
         }
 
@@ -371,10 +469,10 @@
             drawPhase(1 - phaseRadians + Math.floor(phaseRadians));
 
             moon.position.x = moonOrbitRadius * Math.cos(theta) *
-            0.96; // Not sure why these fudge factors are needed...stupid floating point rounding garbage probably...
+                0.96; // Not sure why these fudge factors are needed...stupid floating point rounding garbage probably...
             moon.position.z = moonOrbitRadius * Math.sin(theta) * 0.99;
             moon.position.y = moonOrbitRadius * Math.cos(theta - monthOffset) * moonOrbitOffset * (Math.PI /
-            180); // moonOrbitOffset degrees (exaggerated);
+                180); // moonOrbitOffset degrees (exaggerated);
 
             moonShader.position.x = moon.position.x;
             moonShader.position.z = 500;
