@@ -47,7 +47,7 @@
         .control-panel, .control-subpanel {
             z-index: 1000;
             background: rgba(0, 0, 64, 0.7);
-            padding: 20px;
+            padding: 10px;
             color: white;
             border-radius: 10px;
             border: 2px solid white;
@@ -68,7 +68,7 @@
         }
 
         #slider-container {
-            margin: 0;
+            margin: -10px 20px 10px;
         }
 
         #controls-subpanel {
@@ -335,7 +335,7 @@
         //Stars
         var starGeometry = new THREE.SphereGeometry(1000, 50, 50);
         var starMaterial = new THREE.MeshBasicMaterial({
-            map: new THREE.TextureLoader().load("../images/galaxy_starfield.png"),
+            map: new THREE.TextureLoader().load("../images/starmap_4k.jpg"),
             side: THREE.DoubleSide,
         });
         var starField = new THREE.Mesh(starGeometry, starMaterial);
@@ -394,10 +394,8 @@
             emissive: 0x00ff00,
         });
         var moonAxis = new THREE.Mesh(moonAxisGeometry, moonAxisMaterial);
-        moonAxis.rotation.z = -moonOrbitOffset * (Math.PI / 180); // moonOrbitOffset degrees (exaggerated);
         moon.add(moonAxis);
 
-        moon.rotation.y = Math.PI; // Turn the correct face toward the earth
         scene.add(moon);
 
         if (eclipses) {
@@ -434,6 +432,8 @@
                 monthOffset = 0;
             }
 
+            starField.rotation.y = monthOffset;
+
             var monthNames = ['April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December',
                 'January', 'February', 'March'
             ];
@@ -442,15 +442,19 @@
             earth.rotation.x = 23.5 * (Math.PI / 180) * Math.sin(monthOffset);
             earth.rotation.z = 23.5 * (Math.PI / 180) * Math.cos(monthOffset);
 
-            moonPlane.rotation.z = moonOrbitOffset * (Math.PI / 180) * Math.cos(-
-                monthOffset); // moonOrbitOffset degrees (exaggerated);
-            moonPlane.rotation.x = moonOrbitOffset * (Math.PI / 180) * Math.sin(-monthOffset);
-            moonOrbit.rotation.y = moonOrbitOffset * (Math.PI / 180) * Math.cos(-
-                monthOffset); // moonOrbitOffset degrees (exaggerated);
-            moonOrbit.rotation.x = Math.PI / 2 + moonOrbitOffset * (Math.PI / 180) * Math.sin(-monthOffset);
+            moonPlane.rotation.z = moonOrbitOffset * (Math.PI / 180) * Math.cos(-monthOffset); // moonOrbitOffset degrees (exaggerated);
+            moonPlane.rotation.x = -moonOrbitOffset * (Math.PI / 180) * Math.sin(-monthOffset);
+            moonOrbit.rotation.y = moonOrbitOffset * (Math.PI / 180) * Math.cos(-monthOffset); // moonOrbitOffset degrees (exaggerated);
+            moonOrbit.rotation.x = Math.PI / 2 + -moonOrbitOffset * (Math.PI / 180) * Math.sin(-monthOffset);
+
+            theta = 0;
+            moon.quaternion.copy(moonPlane.quaternion);
+            moon.rotateY(Math.PI);
         }
 
         setMonthAngle();
+
+        var baseRotation = Math.PI;
 
         //Render loop
         var render = function () {
@@ -468,11 +472,9 @@
             var phaseRadians = (theta + Math.PI / 2) / (Math.PI * 2);
             drawPhase(1 - phaseRadians + Math.floor(phaseRadians));
 
-            moon.position.x = moonOrbitRadius * Math.cos(theta) *
-                0.96; // Not sure why these fudge factors are needed...stupid floating point rounding garbage probably...
-            moon.position.z = moonOrbitRadius * Math.sin(theta) * 0.99;
-            moon.position.y = moonOrbitRadius * Math.cos(theta - monthOffset) * moonOrbitOffset * (Math.PI /
-                180); // moonOrbitOffset degrees (exaggerated);
+            moon.position.x = moonOrbitRadius * Math.cos(theta) * 0.95; // Not sure why these fudge factors are needed...stupid floating point rounding garbage probably...
+            moon.position.z = moonOrbitRadius * Math.sin(theta) * 0.95;
+            moon.position.y = moonOrbitRadius * Math.cos(theta + monthOffset) * moonOrbitOffset * (Math.PI / 180); // moonOrbitOffset degrees (exaggerated);
 
             moonShader.position.x = moon.position.x;
             moonShader.position.z = 500;
@@ -482,9 +484,7 @@
             moonMoon.receiveShadow = !shadowCondition;
             moonShader.castShadow = shadowCondition;
 
-            moon.rotation.y += dTheta;
-            moonAxis.rotation.y -= dTheta; // remove rotation from axis marker
-
+            moon.rotateY(dTheta);
 
             camera.lookAt(earthVec);
             renderer.render(scene, camera);
