@@ -588,7 +588,7 @@
             var d = "m100,20 a" + mag + ",20 0 1," + sweep[0] + " 0,160 a20,20 0 1," + sweep[1] + " 0,-160";
             document.getElementById('moon-phase').setAttribute('d', d);
             
-            var penumbraX = (moon.position.z < 0 && Math.abs(moon.position.y) < 8) ? -3000 * moon.position.x / moonOrbitRadius + 100 : -1000;
+            var penumbraX = (moon.position.z < 0 && Math.abs(moon.position.y) < 8 && eclipses) ? -2750 * moon.position.x / moonOrbitRadius + 100 : -1000;
             document.getElementById('earth-penumbra').setAttribute('cx', penumbraX.toString());
         }
     </script>
