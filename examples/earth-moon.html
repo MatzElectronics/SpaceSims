@@ -85,7 +85,8 @@
             margin-left: 20px;
         }
 
-        #moon-phase-display {
+        #moon-phase-display, 
+        #sun-sky-display {
             position: absolute;
             z-index: 1000;
             bottom: 20px;
@@ -94,8 +95,9 @@
             border: 2px solid white;
         }
 
-        #moon-phase-display>svg {
-            border-radius: 10px;
+        #moon-phase-display>svg, 
+        #sun-sky-display>svg {
+            border-radius: 8px;
         }
     </style>
 </head>
@@ -126,6 +128,22 @@
             <path id="moon-phase" filter="url(#blurEdge)" />
         </svg>
     </div>
+    <div id="sun-sky-display" style="display: none;">
+        <svg id="sunbox" width="200px" height="200px" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"
+            xmlns:xlink="http://www.w3.org/1999/xlink">
+            <defs>
+                <pattern id="img1" patternUnits="userSpaceOnUse" width="400" height="400">
+                    <image href="../images/moon.jpg" x="25" y="25" width="150" height="150" />
+                </pattern>
+                <filter id="blurEdge2">
+                    <feGaussianBlur in="SourceGraphic" stdDeviation="2" />
+                </filter>
+            </defs>
+            <rect id="sun-bkg" x="0" y="0" width="200" height="200" fill="hsl(220, 90%, 70%)" />
+            <circle id="sun-sky" fill="rgb(255,230,140)" cx="100" cy="100" r="39" stroke="rgb(255,230,140)" stroke-width="1px" filter="url(#blurEdge)2" />
+            <circle id="moon-umbra"  fill="hsl(220, 90%, 70%)" cx="-550" cy="100" r="40" />
+        </svg>
+    </div>
     <div id="controls">
         <div id="controls-month" class="control-panel">
             <h3>Month:</h3>
@@ -137,7 +155,7 @@
         <div id="controls-speed" class="control-panel">
             <h3>Speed:</h3>
             <div id="slider-container">
-                <input id="sim-speed-slider" type="range" min="-6" max="6" value="1" step="1" onchange="simSpeed = parseInt(this.value * 1.5);"><br>
+                <input id="sim-speed-slider" type="range" min="-10" max="10" value="1" step="1" onchange="simSpeed = parseInt(this.value);"><br>
             </div>
             Reverse&nbsp;&nbsp;
             <button onclick="simSpeed = 0; document.getElementById('sim-speed-slider').value = 0;">Stop</button>
@@ -173,18 +191,22 @@
                 <label for="moon-plane">Moon's plane of orbit</label>
             </div>
             <div id="controls-sun" class="control-subpanel">
-                <h3>Sunlight:</h3>
-                <input type="checkbox" id="moon-axis" name="moon-axis"
+                <h3>Visualizers:</h3>
+                <input type="checkbox" id="suns-rays" name="suns-rays"
                     onchange="sunRays.visible = !sunRays.visible;">
-                <label for="sun-rays">Sun's Rays</label>
-                <br>
-                <input type="checkbox" id="moon-orbit" name="moon-orbit"
-                    onchange="earthShadows.visible = !earthShadows.visible;">
-                <label for="earth-shadows">Earth's Shadows</label>
-                <br>
-                <input type="checkbox" id="moon-plane" name="moon-plane"
-                    onchange="moonShadows.visible = !moonShadows.visible;">
-                <label for="moon-shadows">Moon's Shadows</label>
+                <label for="sun-rays" id="suns-rays-label">Sun's Rays</label>
+                <br id="suns-rays-br"/>
+                <input type="checkbox" id="show-shadows" name="show-shadows"
+                    onchange="earthShadows.visible = !earthShadows.visible; moonShadows.visible = !moonShadows.visible;">
+                <label for="show-shadows" id="show-shadows-label" >Shadows</label>
+                <br id="show-shadows-br"/>
+                <input type="checkbox" id="moon-from-earth" name="moon-from-earth" checked
+                    onchange="toggleMoonBox();">
+                <label for="moon-from-earth" id="moon-from-earth-label">Moon from Earth</label>
+                <br id="moon-from-earth-br">
+                <input type="checkbox" id="sun-from-earth" name="sun-from-earth"
+                    onchange="toggleSunBox();">
+                <label for="sun-from-earth" id="sun-from-earth-label">Sun from Earth</label>
             </div>
         </div>
     </div>
@@ -202,6 +224,44 @@
         var monthOffset = 0;
         var eclipses = (mode === 'eclipse');
 
+        if (eclipses) {
+            document.getElementById('suns-rays').style.display = 'none';
+            document.getElementById('suns-rays-label').style.display = 'none';
+            document.getElementById('suns-rays-br').style.display = 'none';
+        } else {
+            document.getElementById('show-shadows').style.display = 'none';
+            document.getElementById('show-shadows-label').style.display = 'none';
+            document.getElementById('show-shadows-br').style.display = 'none';
+
+            document.getElementById('sun-from-earth').style.display = 'none';
+            document.getElementById('sun-from-earth-label').style.display = 'none';
+        }
+
+        function toggleMoonBox() {
+            var moonBoxDiv = document.getElementById('moon-phase-display');
+            if (moonBoxDiv.style.display !== 'none') {
+                moonBoxDiv.style.display = 'none';
+            } else {
+                moonBoxDiv.style.display = 'block';
+                if (document.getElementById('sun-sky-display').style.display !== 'none') {
+                    document.getElementById('sun-from-earth').checked = false;
+                    toggleSunBox();
+                }
+            }
+        }
+
+        function toggleSunBox() {
+            var sunBoxDiv = document.getElementById('sun-sky-display');
+            if (sunBoxDiv.style.display !== 'none') {
+                sunBoxDiv.style.display = 'none';
+            } else {
+                sunBoxDiv.style.display = 'block';
+                if (document.getElementById('moon-phase-display').style.display !== 'none') {
+                    document.getElementById('moon-from-earth').checked = false;
+                    toggleMoonBox();
+                }
+            }
+        }
 
         //Camera, scene, and renderer
         var scene = new THREE.Scene();
@@ -551,15 +611,17 @@
             moon.position.x = moonOrbitRadius * Math.cos(theta) * positionCorrection;
             moon.position.z = moonOrbitRadius * Math.sin(theta) * positionCorrection;
 
-            moonShader.position.x = moon.position.x;
-            moonShader.position.z = 500;
-            moonShader.position.y = moon.position.y;
+            if (eclipses) {
+                moonShader.position.x = moon.position.x;
+                moonShader.position.z = 500;
+                moonShader.position.y = moon.position.y;
 
-            moonShadows.position.set(moon.position.x, moon.position.y, moon.position.z - moonOrbitRadius / 2);
+                moonShadows.position.set(moon.position.x, moon.position.y, moon.position.z - moonOrbitRadius / 2);
 
-            var shadowCondition = (moon.position.z > 0);
-            moonMoon.receiveShadow = !shadowCondition;
-            moonShader.castShadow = shadowCondition;
+                var shadowCondition = (moon.position.z > 0);
+                moonMoon.receiveShadow = !shadowCondition;
+                moonShader.castShadow = shadowCondition;
+            }
 
             moon.rotateY(dTheta);
 
@@ -588,8 +650,13 @@
             var d = "m100,20 a" + mag + ",20 0 1," + sweep[0] + " 0,160 a20,20 0 1," + sweep[1] + " 0,-160";
             document.getElementById('moon-phase').setAttribute('d', d);
             
-            var penumbraX = (moon.position.z < 0 && Math.abs(moon.position.y) < 8 && eclipses) ? -2750 * moon.position.x / moonOrbitRadius + 100 : -1000;
-            document.getElementById('earth-penumbra').setAttribute('cx', penumbraX.toString());
+            var penumbraX = (Math.abs(moon.position.y) < 8 && eclipses) ? -2750 * moon.position.x / moonOrbitRadius + 100 : -1000;
+            var skyBrightness = 'hsl(220, 90%, ' + Math.round(Math.min(Math.max(Math.abs(moon.position.x / (2 * moonSize - 0.3)), 0), 1) * 70) + '%)';
+
+            document.getElementById('earth-penumbra').setAttribute('cx', (moon.position.z < 0 ? penumbraX : -1000).toString());
+            document.getElementById('moon-umbra').setAttribute('cx', (moon.position.z > 0 ? penumbraX / 2 + 50 : -1000).toString());
+            document.getElementById('sun-bkg').setAttribute('fill', skyBrightness);
+            document.getElementById('moon-umbra').setAttribute('fill', skyBrightness);
         }
     </script>
 </body>
