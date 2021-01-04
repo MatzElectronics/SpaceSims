@@ -91,6 +91,10 @@
             right: 20px;
         }
 
+        #speed-button {
+            width: 70px;
+        }
+
         #slider-container {
             margin: -5px 20px 5px;
         }
@@ -182,10 +186,10 @@
             <h3>Speed:</h3>
             <div id="slider-container">
                 <input id="sim-speed-slider" type="range" min="-10" max="10" value="1" step="1"
-                    onchange="simSpeed = parseInt(this.value);"><br>
+                    onchange="setSpeed(parseInt(this.value));"><br>
             </div>
             Reverse&nbsp;&nbsp;
-            <button onclick="simSpeed = 0; document.getElementById('sim-speed-slider').value = 0;">Stop</button>
+            <button id="speed-button" onclick="setSpeed();">Stop</button>
             &nbsp;&nbsp;Forward
         </div>
         <div id="controls-subpanel" class="control-group">
@@ -251,11 +255,32 @@
 
         var simElement = document.getElementById('simulation');
         var simSpeed = 1;
+        var oldSimSpeed = 1;
         var moonOrbitRadius = (mode === 'eclipse' ? 80 : 30);
         var moonOrbitOffset = (mode === 'eclipse' ? 20 : 5);
         var moonSize = (mode === 'eclipse' ? 2 : 4);
         var monthOffset = 0;
         var eclipses = (mode === 'eclipse');
+
+        function setSpeed(newSpeed) {
+            if (newSpeed) {
+                simSpeed = newSpeed;
+                if (newSpeed !== 0) {
+                    document.getElementById('speed-button').innerHTML = 'Stop';
+                } else {
+                    oldSimSpeed = 1;
+                    document.getElementById('speed-button').innerHTML = 'Go'; 
+                }
+            } else if (simSpeed === 0) {
+                simSpeed = oldSimSpeed;
+                document.getElementById('speed-button').innerHTML = 'Stop';
+            } else {
+                oldSimSpeed = simSpeed;
+                simSpeed = 0; 
+                document.getElementById('speed-button').innerHTML = 'Resume';
+            }
+            document.getElementById('sim-speed-slider').value = simSpeed;
+        } 
 
         if (eclipses) {
             document.getElementById('suns-rays').style.display = 'none';
